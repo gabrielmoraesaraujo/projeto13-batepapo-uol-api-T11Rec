@@ -4,11 +4,13 @@ import joi from "joi"
 import dotenv from "dotenv"
 import { MongoClient } from "mongodb"
 
+dotenv.config()
+
 
 const app = express()
 app.use(express.json())
 app.use(cors())
-dotenv.config()
+
 
 //Configuração do banco
 const mongoClient = new MongoClient(process.env.DATABASE_URL)
