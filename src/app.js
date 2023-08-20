@@ -31,18 +31,18 @@ const db = mongoClient.db()
 
 
 //Validação de participantes
-const participantsSchema = Joi.object({
-    name: Joi.string().required(),
-    lastStatus: Joi.number().required()
+const participantsSchema = joi.object({
+    name: joi.string().required(),
+    lastStatus: joi.number().required()
 })
 
 //Validação de menssagens
-const messagesSchema = Joi.object({
-    from: Joi.string().required(),
-    to: Joi.string().required(),
-    text: Joi.string().required,
-    type: Joi.string().required(),
-    time: Joi.number().required() //Date.now() //VOLTAR A MODIFICAR 
+const messagesSchema = joi.object({
+    from: joi.string().required(),
+    to: joi.string().required(),
+    text: joi.string().required,
+    type: joi.string().required(),
+    time: joi.number().required() //Date.now() //VOLTAR A MODIFICAR 
 })
 
 //ROTAS DE POST
