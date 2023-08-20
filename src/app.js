@@ -57,13 +57,17 @@ app.post('/participants', async (req, res) => {
         const errors = validation.error.details.map(det => det.message)
         return response.status(422).send(errors)
     }
-
-
         db.participants.insertOne({name: "fulano"})
 
     try{
+        const participantsExiste = await db.collection("participants").findOne({ name })
+        if (participantsExiste) return response.status(409).send("Esse usuario já existe!")
 
-    }catch{
+        await db.collection("participants").insertOne(request.body)
+        response.status(201).send(request.body)
+
+    }catch(err){
+        response.status(500).send(err.message)
 
     }
 })
