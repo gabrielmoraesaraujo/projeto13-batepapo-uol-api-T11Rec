@@ -81,7 +81,7 @@ app.post('/participants', async (req, response) => {
 
 app.post('/messages', async(req, res) => {
     const { to, text, type } = req.body
-    const userFrom = req.headers.user
+    const userFrom = req.headers.User
     const message = { to, text, type, from: userFrom }
 
     const validation = messagesSchema.validate(message, { abortEarly: true})
