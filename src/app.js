@@ -1,4 +1,4 @@
-import express, { request } from "express"
+import express, { request, response } from "express"
 import cors from "cors"
 import joi from "joi"
 import dotenv from "dotenv"
@@ -44,44 +44,39 @@ const messagesSchema = joi.object({
     to: joi.string().required(),
     text: joi.string().required,
     type: joi.string().required(),
-    time: joi.number().required() //Date.now() //VOLTAR A MODIFICAR 
 })
 
 //ROTAS DE POST
+app.post('/participants', async (req, response) => {
+    const participant = req.body
+    const message = {from: participant.name, to: 'Todos', text: 'entra na sala...', type: 'status', time: dayjs().format('HH:mm:ss')}
 
-
-app.post('/participants', async (req, res) => {
-    const participant = req.body;
-    const message = {from: participant.name, to: 'Todos', text: 'entra na sala...', type: 'status', time: dayjs().format('HH:mm:ss')};
-
-    const validation = participantsSchema.validate(participant, { abortEarly: false});
+    const validation = participantsSchema.validate(participant, { abortEarly: false})
 
     if(validation.error){
-        console.log(validation.error.details);
-        res.sendStatus(422);
-        return;
+        const errors = validation.error.details.map(det => det.message)
+        return response.status(422).send(errors)
     }
     
     try{
-        const participants = await db.collection('participants').find().toArray();
-        const nameExists = participants.some(p => p.name === participant.name);
+        const participants = await db.collection('participants').find().toArray()
+        const nameExists = participants.some(p => p.name === participant.name)
 
         if(nameExists === false){
-        const { name } = participant;
+        const { name } = participant
 
-        await db.collection('participants').insertOne({ name, 'lastStatus': Date.now() });
-        await db.collection('messages').insertOne(message);
+        await db.collection('participants').insertOne({ name, 'lastStatus': Date.now() })
+        await db.collection('messages').insertOne(message)
 
-        res.sendStatus(201);
-        }else{
-            res.status(409).send("Já existe um participante com este nome!");
+        response.status(201).send(request.body)
+            }else{
+            response.status(409).send("Já existe um participante com este nome!")
         }
-    }catch(error){
-        console.error(error);
-        res.sendStatus(500);
+    }catch(err){
+        response.status(500).send(err.message)
     }
 
-});
+})
 
 
 app.post('/messages', async(req, res) => {
@@ -117,13 +112,29 @@ app.post('/messages', async(req, res) => {
     }
 })
 
-app.post('/status', async (req, res) => {
+app.post('/status', async (req, response) => {
+    const user = req.headers.user;
 
 
-    try{
-
-    }catch{
+    if(user){
+        try{
+            const userId = await db.collection('participants').findOne({ name: user })
+            if(!userId){
+                return response.sendStatus(404)
+                
+            }
+            const time = Date.now()
+            await db.collection('participants').updateOne({ _id: userId._id }, { $set: {lastStatus: time}})
+            response.sendStatus(200)
         
+        }catch(error){
+            console.error(error)
+            response.sendStatus(500)
+        }
+
+
+    }else{
+     response.sendStatus(404)
     }
 })
 
