@@ -84,7 +84,7 @@ app.post('/messages', async(req, res) => {
     const userFrom = req.headers.user
     const message = { to, text, type, from: userFrom }
 
-    const validation = messageSchema.validate(message, { abortEarly: true})
+    const validation = messagesSchema.validate(message, { abortEarly: false})
 
     if(validation.error){
         console.log(validation.error.details)
@@ -141,7 +141,7 @@ app.post('/status', async (req, response) => {
 
 //ROTAS DE GET
 
-app.get('/participants', async (request, response) => {
+app.get('/participants', async (req, response) => {
     try {
       const participants = await db.collection('participants').find().toArray()
       response.send(participants)
@@ -159,17 +159,6 @@ app.get('/messages', async (req, res) => {
         
     }
 })
-
-app.post('/status', async (req, res) => {
-
-
-    try{
-
-    }catch{
-        
-    }
-})
-
 
 //Rota de DELETE
 
