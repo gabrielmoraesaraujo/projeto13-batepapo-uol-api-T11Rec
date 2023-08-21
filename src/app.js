@@ -4,12 +4,13 @@ import joi from "joi"
 import dotenv from "dotenv"
 import { MongoClient } from "mongodb"
 
-dotenv.config()
+
 
 
 const app = express()
 app.use(express.json())
 app.use(cors())
+dotenv.config()
 
 
 //Configuração do banco
@@ -47,9 +48,11 @@ const messagesSchema = joi.object({
 
 //ROTAS DE POST
 
-app.post('/participants', async (req, res) => {
 
-    const {name} = request.body
+app.post('/participants', async (request, response) => {
+
+    const {name, lastStatus } = request.body
+     
 
     const validation = participantsSchema.validate(request.body, {abortEarly: false})
 
@@ -57,10 +60,9 @@ app.post('/participants', async (req, res) => {
         const errors = validation.error.details.map(det => det.message)
         return response.status(422).send(errors)
     }
-        db.participants.insertOne({name: "fulano"})
 
     try{
-        const participantsExiste = await db.collection("participants").findOne({ name })
+        const participantsExiste = await db.collection("participants").findOne({ name, lastStatus })
         if (participantsExiste) return response.status(409).send("Esse usuario já existe!")
 
         await db.collection("participants").insertOne(request.body)
@@ -69,7 +71,7 @@ app.post('/participants', async (req, res) => {
     }catch(err){
         response.status(500).send(err.message)
 
-    }
+    } 
 })
 
 app.post('/messages', async (req, res) => {
