@@ -40,10 +40,11 @@ const participantsSchema = joi.object({
 
 //Validação de menssagens
 const messagesSchema = joi.object({
-    from: joi.string().required(),
+    
     to: joi.string().required(),
     text: joi.string().required,
-    type: joi.string().required().pattern(/message/, /private_message/)
+    type: joi.string().required().pattern(/message/, /private_message/),
+    from: joi.string().required()
 })
 
 //ROTAS DE POST
@@ -81,34 +82,33 @@ app.post('/participants', async (req, response) => {
 
 app.post('/messages', async(req, res) => {
     const { to, text, type } = req.body
-    const userFrom = req.headers.User
-    const message = { to, text, type, from: userFrom }
+    const user = req.headers.user
+    const message = { to, text, type, from: user }
 
-    const validation = messagesSchema.validate(message, { abortEarly: true})
+    const validation = messagesSchema.validate(message, { abortEarly: false})
 
     if(validation.error){
         console.log(validation.error.details)
-        res.sendStatus(422)
-        return
+        return res.status(422).send("Aqui")
+        
     }
 
     try{
     const participants = await db.collection('participants').find().toArray()
-    const userFromExists = participants.some(p => p.name === userFrom)
+    const userExists = participants.some(p => p.name === user)
     const time = dayjs().format('HH:mm:ss')
 
-    if(userFromExists){
+    if(userExists){
         await db.collection('messages').insertOne({...message, time})
         res.sendStatus(201)
     }else{
         console.log(validation.error.details)
-        res.sendStatus(422)
-        return
+        return res.status(422).send(message.err)
+        
     }
 
     }catch(error){
-        console.error(error)
-        res.sendStatus(500)
+        res.status(500).send(message.error)
     }
 })
 
@@ -164,8 +164,7 @@ app.get('/participants', async (req, response) => {
         }
 
     }catch(error){
-        console.error(error)
-        res.sendStatus(500)
+        response.status(500).send(err.message)
     }
 })
 
@@ -180,7 +179,7 @@ setInterval(async () => {
  
         removeParticipants.forEach(saiDaSala)
 
-    async function saiDaSala(item, indice){
+    async function saiDaSala(item, i){
         const message = {from: item.name, to: 'Todos', text: 'sai da sala...', type: 'status', time: dayjs().format('HH:mm:ss')}
         await db.collection('messages').insertOne(message)
     }
