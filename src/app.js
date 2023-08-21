@@ -54,7 +54,7 @@ app.post('/participants', async (req, res) => {
     const participant = req.body;
     const message = {from: participant.name, to: 'Todos', text: 'entra na sala...', type: 'status', time: dayjs().format('HH:mm:ss')};
 
-    const validation = participantsSchema.validate(participant, { abortEarly: true});
+    const validation = participantsSchema.validate(participant, { abortEarly: false});
 
     if(validation.error){
         console.log(validation.error.details);
