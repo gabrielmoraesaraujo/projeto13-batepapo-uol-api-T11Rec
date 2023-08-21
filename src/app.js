@@ -34,7 +34,7 @@ const db = mongoClient.db()
 //Validação de participantes
 const participantsSchema = joi.object({
     name: joi.string().required(),
-    lastStatus: joi.number().required()
+
 })
 
 //Validação de menssagens
@@ -51,10 +51,43 @@ const messagesSchema = joi.object({
 
 app.post('/participants', async (request, response) => {
 
-    const {name, lastStatus } = request.body
+    console.log(request.body)
+
+    const {name} = request.body
+//const message = {from: participant.name, to: 'Todos', text: 'entra na sala...', type: 'status', time: dayjs().format('HH:mm:ss')};
      
 
     const validation = participantsSchema.validate(request.body, {abortEarly: false})
+
+    if(validation.error){
+        const errors = validation.error.details.map(det => det.message)
+        return response.status(422).send(errors)
+    }
+
+    try{
+        const participantsExiste = await db.collection("participants").findOne({ name })
+        
+        
+
+        if (participantsExiste) return response.status(409).send("Esse usuario já existe!")
+
+        await db.collection("participants").insertOne({name, 'lastStatus': Date.now()})
+        await db.collection('messages').insertOne(message);
+
+        response.status(201).send(request.body)
+
+    }catch(error){
+        response.status(500).send(error.message)
+
+    } 
+})
+
+app.post('/messages', async (req, res) => {
+
+    const {to, text, type } = request.body
+     
+
+    const validation = messagesSchemaSchema.validate(request.body, {abortEarly: false})
 
     if(validation.error){
         const errors = validation.error.details.map(det => det.message)
@@ -74,16 +107,6 @@ app.post('/participants', async (request, response) => {
     } 
 })
 
-app.post('/messages', async (req, res) => {
-
-
-    try{
-
-    }catch{
-        
-    }
-})
-
 app.post('/status', async (req, res) => {
 
 
@@ -97,15 +120,14 @@ app.post('/status', async (req, res) => {
 
 //ROTAS DE GET
 
-app.get('/participants', async (req, res) => {
-
-
-    try{
-
-    }catch{
-
+app.get('/participants', async (request, response) => {
+    try {
+      const participants = await db.collection('participants').find().toArray()
+      response.send(participants)
+    } catch (err) {
+      response.status(500).send(err.message)
     }
-})
+  })
 
 app.get('/messages', async (req, res) => {
 
