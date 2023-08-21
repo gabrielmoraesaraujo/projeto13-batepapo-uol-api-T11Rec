@@ -3,6 +3,7 @@ import cors from "cors"
 import joi from "joi"
 import dotenv from "dotenv"
 import { MongoClient } from "mongodb"
+import dayjs from "dayjs"
 
 
 
@@ -49,38 +50,39 @@ const messagesSchema = joi.object({
 //ROTAS DE POST
 
 
-app.post('/participants', async (request, response) => {
+app.post('/participants', async (req, res) => {
+    const participant = req.body;
+    const message = {from: participant.name, to: 'Todos', text: 'entra na sala...', type: 'status', time: dayjs().format('HH:mm:ss')};
 
-    console.log(request.body)
-
-    const {name} = request.body
-//const message = {from: participant.name, to: 'Todos', text: 'entra na sala...', type: 'status', time: dayjs().format('HH:mm:ss')};
-     
-
-    const validation = participantsSchema.validate(request.body, {abortEarly: false})
+    const validation = participantsSchema.validate(participant, { abortEarly: true});
 
     if(validation.error){
-        const errors = validation.error.details.map(det => det.message)
-        return response.status(422).send(errors)
+        console.log(validation.error.details);
+        res.sendStatus(422);
+        return;
     }
-
+    
     try{
-        const participantsExiste = await db.collection("participants").findOne({ name })
-        
-        
+        const participants = await db.collection('participants').find().toArray();
+        const nameExists = participants.some(p => p.name === participant.name);
 
-        if (participantsExiste) return response.status(409).send("Esse usuario já existe!")
+        if(nameExists === false){
+        const { name } = participant;
 
-        await db.collection("participants").insertOne({name, 'lastStatus': Date.now()})
+        await db.collection('participants').insertOne({ name, 'lastStatus': Date.now() });
         await db.collection('messages').insertOne(message);
 
-        response.status(201).send(request.body)
-
+        res.sendStatus(201);
+        }else{
+            res.status(409).send("Já existe um participante com este nome!");
+        }
     }catch(error){
-        response.status(500).send(error.message)
+        console.error(error);
+        res.sendStatus(500);
+    }
 
-    } 
-})
+});
+
 
 app.post('/messages', async(req, res) => {
     const { to, text, type } = req.body
