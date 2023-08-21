@@ -176,6 +176,7 @@ setInterval(async () => {
     
     try{
         const removeParticipants = await db.collection('participants').find({ lastStatus: {$lt: timeNowMinus10s} }).toArray()
+        const removedParticipants = await db.collection('participants').deleteMany({lastStatus: {$lt: timeNowMinus10s}})
  
         removeParticipants.forEach(saiDaSala)
 
