@@ -82,29 +82,37 @@ app.post('/participants', async (request, response) => {
     } 
 })
 
-app.post('/messages', async (req, res) => {
+app.post('/messages', async(req, res) => {
+    const { to, text, type } = req.body
+    const userFrom = req.headers.user
+    const message = { to, text, type, from: userFrom }
 
-    const {to, text, type } = request.body
-     
-
-    const validation = messagesSchemaSchema.validate(request.body, {abortEarly: false})
+    const validation = messageSchema.validate(message, { abortEarly: true})
 
     if(validation.error){
-        const errors = validation.error.details.map(det => det.message)
-        return response.status(422).send(errors)
+        console.log(validation.error.details)
+        res.sendStatus(422)
+        return
     }
 
     try{
-        const participantsExiste = await db.collection("participants").findOne({ name, lastStatus })
-        if (participantsExiste) return response.status(409).send("Esse usuario já existe!")
+    const participants = await db.collection('participants').find().toArray()
+    const userFromExists = participants.some(p => p.name === userFrom)
+    const time = dayjs().format('HH:mm:ss')
 
-        await db.collection("participants").insertOne(request.body)
-        response.status(201).send(request.body)
+    if(userFromExists){
+        await db.collection('messages').insertOne({...message, time})
+        res.sendStatus(201)
+    }else{
+        console.log(validation.error.details)
+        res.sendStatus(422)
+        return
+    }
 
-    }catch(err){
-        response.status(500).send(err.message)
-
-    } 
+    }catch(error){
+        console.error(error)
+        res.sendStatus(500)
+    }
 })
 
 app.post('/status', async (req, res) => {
